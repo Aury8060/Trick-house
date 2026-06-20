@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trick House - Painel Inteligente Gamificado</title>
+  <style>
+    /* Estilos Globais - Tema Glassmorphism Moderno */
+    :root {
+      --primary: #00f2fe;
+      --secondary: #4facfe;
+      --success: #00e676;
+      --danger: #ff1744;
+      --text: #ffffff;
+      --glass-bg: rgba(255, 255, 255, 0.07);
+      --glass-border: rgba(255, 255, 255, 0.15);
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+    .hidden { display: none !important; }
+    
+    /* Efeito Vidro (Glassmorphism) */
+    .container, .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .container { width: 100%; max-width: 900px; padding: 25px; margin-bottom: 20px; }
+    .card { padding: 20px; margin-bottom: 15px; }
+
+    h1, h2, h3 { text-align: center; color: var(--primary); font-weight: 300; letter-spacing: 1px; }
+    
+    input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; box-sizing: border-box; font-size: 1em; outline: none; }
+    input, select { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); color: white; }
+    input::placeholder { color: rgba(255,255,255,0.6); }
+    option { background: #302b63; color: white; }
+
+    button { background: linear-gradient(90deg, var(--secondary), var(--primary)); color: #000; font-weight: bold; cursor: pointer; border: none; transition: transform 0.2s, box-shadow 0.2s; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4); }
+    .btn-danger { background: linear-gradient(90deg, #ff5252, var(--danger)); color: white; }
+    .btn-success { background: linear-gradient(90deg, #00c6ff, var(--success)); color: black; }
+    
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 700px) { .admin-grid { grid-template-columns: 1fr; } }
+    
+    .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .coin-badge { background: rgba(255, 215, 0, 0.2); border: 1px solid gold; color: gold; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 1.2em;}
+
+    /* Menus de Navegação (Abas) */
+    .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;}
+    .nav-bar button { margin: 0; min-width: 120px; white-space: nowrap; }
+
+    .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .store-item { text-align: center; }
+    .store-item h4 { margin: 5px 0; color: white; }
+    .store-item .price { color: gold; font-weight: bold; font-size: 1.2em; margin-bottom: 10px; }
+
+    .playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+    .song-card { background: rgba(0,0,0,0.5); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s; border: 1px solid var(--glass-border); }
+    .song-card:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3); }
+    .song-card img { width: 100%; height: 130px; object-fit: cover; }
+    .song-card .song-title { padding: 10px; font-size: 0.9em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .player-wrapper iframe { width: 100%; height: 100%; border: none; }
+
+    .timer-wrapper { display: flex; flex-direction: column; align-items: center; margin: 30px 0; }
+    .circle-timer { width: 180px; height: 180px; border-radius: 50%; background: conic-gradient(var(--primary) 0%, rgba(255,255,255,0.1) 0%); display: flex; justify-content: center; align-items: center; font-size: 2.5em; font-weight: 300; position: relative; box-shadow: 0 0 20px rgba(0, 242, 254, 0.2); }
+    .circle-timer::before { content: ""; position: absolute; width: 160px; height: 160px; background: #1a162b; border-radius: 50%; }
+    .timer-text { position: relative; z-index: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+    .pet-container { text-align: center; font-size: 5em; margin: 20px 0; min-height: 100px; text-shadow: 0 0 20px rgba(255,255,255,0.3);}
+    .pet-dialogue { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; font-style: italic; margin-bottom: 20px; position: relative; border: 1px solid var(--glass-border);}
+    .anim-generic { animation: floatAndBreathe 2.5s infinite alternate ease-in-out; }
+    @keyframes floatAndBreathe { 0% { transform: scale(1) translateY(0px) rotate(-3deg); } 100% { transform: scale(1.08) translateY(-10px) rotate(3deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="login-screen" class="container">
+    <h1>Trick House 🏡</h1>
+    <input type="text" id="login-user" placeholder="Usuário">
+    <input type="password" id="login-pass" placeholder="Senha">
+    <button id="btn-login">Entrar</button>
+  </div>
+
+  <div id="admin-screen" class="container hidden">
+    <div class="flex-header">
+      <h2>Trick House - Admin</h2>
+      <button id="btn-logout-admin" class="btn-danger" style="width: auto; padding: 10px 20px;">Sair</button>
+    </div>
+
+    <div class="nav-bar">
+      <button id="nav-admin-dash" class="btn-success">🎮 Dashboard</button>
+      <button id="nav-admin-history" style="background: linear-gradient(90deg, #b224ef, #7579ff); color: white;">📜 Histórico</button>
+    </div>
+    
+    <div id="admin-dash-tab">
+      <div class="admin-grid">
+        <div class="card">
+          <h3>👥 Usuários</h3>
+          <input type="text" id="new-username" placeholder="Nome de Usuário">
+          <input type="password" id="new-password" placeholder="Senha">
+          <select id="new-role"><option value="user">Usuário Comum</option><option value="admin">Administrador</option></select>
+          <button id="btn-create-user">Cadastrar/Atualizar</button>
+        </div>
+
+        <div class="card">
+          <h3>🐾 <span id="pet-action-title">Criar</span> Guardião</h3>
+          <input type="text" id="pet-name" placeholder="Nome do Pet">
+          <input type="text" id="pet-emoji" placeholder="Emoji (ex: 🐎, 🦋, 🐌, 🐉)">
+          <input type="text" id="pet-tip" placeholder="Dica Padrão">
+          <button id="btn-create-pet">Dar vida ao Pet</button>
+          <button id="btn-cancel-pet" class="btn-danger hidden">Cancelar Edição</button>
+          <hr style="border-color: var(--glass-border); margin: 15px 0;">
+          <div id="admin-pets-list" style="max-height: 120px; overflow-y: auto;">Carregando pets...</div>
+        </div>
+
+        <div class="card">
+          <h3>🎶 Montar Playlist</h3>
+          <select id="playlist-user-select"><option value="">Selecione o Usuário</option></select>
+          <input type="text" id="song-name" placeholder="Nome da Música">
+          <input type="text" id="song-cover" placeholder="Link da Capa (URL)">
+          <input type="text" id="song-url" placeholder="Link do YouTube (URL)">
+          <button id="btn-create-song">Adicionar à Playlist</button>
+          <hr style="border-color: var(--glass-border); margin: 15px 0;">
+          <div id="admin-songs-list" style="max-height: 120px; overflow-y: auto;"></div>
+        </div>
+
+        <div class="card">
+          <h3>🛍️ Loja de Recompensas</h3>
+          <input type="text" id="reward-name" placeholder="Ex: 🍕 Noite da Pizza">
+          <input type="number" id="reward-price" placeholder="Valor (ex: 40)">
+          <button id="btn-create-reward">Cadastrar na Loja</button>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+          <h3>📋 Delegar Tarefa</h3>
+          <div style="display:flex; gap:10px;">
+            <select id="task-user-select" style="flex:1;"><option>Usuários...</option></select>
+            <select id="task-pet-select" style="flex:1;"><option>Sem Pet</option></select>
+          </div>
+          <input type="text" id="task-desc" placeholder="Descrição da Tarefa">
+          <input type="number" id="task-coins" placeholder="Quantas moedas vale?">
+          <button id="btn-create-task">Enviar Tarefa</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h3>✅ Aprovar Tarefas</h3>
+        <div id="pending-reviews-list">Nenhuma tarefa pendente.</div>
+      </div>
+      <div class="card">
+        <h3>🎁 Entregar Prêmios (Loja)</h3>
+        <div id="pending-purchases-list">Nenhuma compra pendente.</div>
+      </div>
+    </div>
+
+    <div id="admin-history-tab" class="hidden">
+      <h3>📜 Registros e Auditoria</h3>
+      <p style="text-align:center; color: #ccc;">Acompanhe tudo que já foi pago, entregue e transferido na casa.</p>
+      <div id="admin-history-list"></div>
+    </div>
+  </div>
+
+  <div id="user-screen" class="container hidden">
+    <div class="flex-header">
+      <h2>Trick House</h2>
+      <div class="coin-badge">🪙 <span id="user-coin-balance">0</span></div>
+    </div>
+    
+    <div class="nav-bar">
+      <button id="nav-tasks" class="btn-success">📋 Tarefas</button>
+      <button id="nav-playlist" style="background: linear-gradient(90deg, #b224ef, #7579ff); color: white;">🎧 Músicas</button>
+      <button id="nav-store" style="background: linear-gradient(90deg, #f6d365, #fda085);">🛒 Lojinha</button>
+      <button id="nav-transfer" style="background: linear-gradient(90deg, #11998e, #38ef7d); color: white;">💸 Transferir</button>
+      <button id="btn-logout-user" class="btn-danger">Sair</button>
+    </div>
+
+    <div id="user-tasks-tab"><h3 style="text-align: left;">Tarefas Pendentes</h3><div id="user-tasks-list">Nenhuma tarefa no momento.</div></div>
+    
+    <div id="user-playlist-tab" class="hidden">
+      <h3 style="text-align: left;">Sua Playlist Exclusiva</h3>
+      <div id="yt-player-container" class="player-wrapper"><iframe id="yt-iframe" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
+      <div id="user-playlist-grid" class="playlist-grid">Carregando...</div>
+    </div>
+
+    <div id="user-store-tab" class="hidden"><h3 style="text-align: left;">Gaste suas Moedas!</h3><div id="store-items-list" class="store-grid">Carregando loja...</div></div>
+
+    <div id="user-transfer-tab" class="hidden">
+      <h3 style="text-align: left;">Fazer uma "Vaquinha"</h3>
+      <p>Transfira moedas para outro morador da casa!</p>
+      <div class="card">
+        <select id="transfer-user-select"><option value="">Para quem?</option></select>
+        <input type="number" id="transfer-amount" placeholder="Quantidade de Moedas">
+        <button id="btn-transfer-coins">Enviar Moedas 💸</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="execution-screen" class="container hidden">
+    <h2 id="exec-task-title">Executando Tarefa</h2>
+    <div style="text-align: center; color: gold; margin-bottom: 10px;">Recompensa: <span id="exec-task-coins"></span> 🪙</div>
+    <div id="exec-pet-dialogue" class="pet-dialogue hidden"></div>
+    <div id="exec-pet-emoji" class="pet-container hidden"></div>
+    <div class="timer-wrapper"><div id="circle-timer" class="circle-timer"><span id="timer-text" class="timer-text">00:00</span></div></div>
+    <button id="btn-finish-task" class="btn-success">Finalizar e Enviar para Avaliação</button>
+    <button id="btn-cancel-task" class="btn-danger">Cancelar/Voltar</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child, update, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBlig3r_GYe6QH4ZpVaYw13TtJSnETdx88",
+      authDomain: "trick-house8060.firebaseapp.com",
+      projectId: "trick-house8060",
+      storageBucket: "trick-house8060.firebasestorage.app",
+      messagingSenderId: "735425634096",
+      appId: "1:735425634096:web:6d90c1f45c8b9a666472f5",
+      measurementId: "G-C9PEM1KR59",
+      databaseURL: "https://trick-house8060-default-rtdb.firebaseio.com/"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Agora o sistema tenta pegar o usuário da memória antes de iniciar
+    let currentUser = JSON.parse(localStorage.getItem('trickHouseUser')) || null;
+    let currentTaskExecId = null;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let userPlaylistStore = []; 
+    let editingPetId = null; 
+
+    // Função de formatação de tempo global
+    function formatTime(sec) { 
+      const m = Math.floor(sec / 60).toString().padStart(2, '0'); 
+      const s = (sec % 60).toString().padStart(2, '0'); 
+      return `${m}:${s}`; 
+    }
+
+    async function checkAndCreateInitialAdmin() {
+      const sanitizedUsername = "au_costa"; 
+      const snapshot = await get(child(ref(db), `users/${sanitizedUsername}`));
+      if (!snapshot.exists()) {
+        await set(ref(db, `users/${sanitizedUsername}`), { username: "au.costa", password: "80605276", role: "admin", coins: 0 });
+      }
+    }
+    checkAndCreateInitialAdmin();
+
+    function sanitizeKey(str) { return str.replace(/\./g, '_'); }
+    function getYTId(url) { const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i); return match ? match[1] : null; }
+
+    // --- VERIFICAR SESSÃO SALVA AO RECARREGAR A PÁGINA ---
+    function checkLoginSession() {
+      if (currentUser) {
+        document.getElementById('login-screen').classList.add('hidden');
+        if (currentUser.role === 'admin') {
+          document.getElementById('admin-screen').classList.remove('hidden');
+          loadAdminData();
+        } else {
+          document.getElementById('user-screen').classList.remove('hidden');
+          loadUserData();
+        }
+      }
+    }
+    // Chama a função de verificação assim que a página carrega
+    checkLoginSession();
+
+    // --- LOGIN E LOGOUT ---
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const user = document.getElementById('login-user').value;
+      const pass = document.getElementById('login-pass').value;
+      const safeKey = sanitizeKey(user);
+
+      const snapshot = await get(child(ref(db), `users/${safeKey}`));
+      if (snapshot.exists() && snapshot.val().password === pass) {
+        currentUser = { id: safeKey, ...snapshot.val() };
+        
+        // SALVA O USUÁRIO NA MEMÓRIA DO NAVEGADOR
+        localStorage.setItem('trickHouseUser', JSON.stringify(currentUser));
+
+        document.getElementById('login-screen').classList.add('hidden');
+        if (currentUser.role === 'admin') {
+          document.getElementById('admin-screen').classList.remove('hidden');
+          loadAdminData();
+        } else {
+          document.getElementById('user-screen').classList.remove('hidden');
+          loadUserData();
+        }
+      } else { alert("Usuário ou senha incorretos!"); }
+    });
+
+    function logout() {
+      currentUser = null;
+      // LIMPA O USUÁRIO DA MEMÓRIA DO NAVEGADOR AO SAIR
+      localStorage.removeItem('trickHouseUser');
+      
+      document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('login-user').value = "";
+      document.getElementById('login-pass').value = "";
+      document.getElementById('yt-iframe').src = ""; 
+    }
+    document.getElementById('btn-logout-admin').addEventListener('click', logout);
+    document.getElementById('btn-logout-user').addEventListener('click', logout);
+
+    // --- NAVEGAÇÃO ADMIN E USUÁRIO ---
+    const resetAdminTabs = () => { ['admin-dash-tab', 'admin-history-tab'].forEach(id => document.getElementById(id).classList.add('hidden')); };
+    document.getElementById('nav-admin-dash').addEventListener('click', () => { resetAdminTabs(); document.getElementById('admin-dash-tab').classList.remove('hidden'); });
+    document.getElementById('nav-admin-history').addEventListener('click', () => { resetAdminTabs(); document.getElementById('admin-history-tab').classList.remove('hidden'); });
+
+    const resetUserTabs = () => { ['user-tasks-tab', 'user-playlist-tab', 'user-store-tab', 'user-transfer-tab'].forEach(id => document.getElementById(id).classList.add('hidden')); };
+    document.getElementById('nav-tasks').addEventListener('click', () => { resetUserTabs(); document.getElementById('user-tasks-tab').classList.remove('hidden'); });
+    document.getElementById('nav-playlist').addEventListener('click', () => { resetUserTabs(); document.getElementById('user-playlist-tab').classList.remove('hidden'); });
+    document.getElementById('nav-store').addEventListener('click', () => { resetUserTabs(); document.getElementById('user-store-tab').classList.remove('hidden'); });
+    document.getElementById('nav-transfer').addEventListener('click', () => { resetUserTabs(); document.getElementById('user-transfer-tab').classList.remove('hidden'); });
+
+    // --- AÇÕES ADMIN ---
+    document.getElementById('btn-create-user').addEventListener('click', async () => {
+      const user = document.getElementById('new-username').value;
+      const pass = document.getElementById('new-password').value;
+      const role = document.getElementById('new-role').value;
+      if(!user || !pass) return;
+      const snap = await get(child(ref(db), `users/${sanitizeKey(user)}`));
+      const coins = snap.exists() ? (snap.val().coins || 0) : 0;
+      await set(ref(db, `users/${sanitizeKey(user)}`), { username: user, password: pass, role: role, coins: coins });
+      alert("Usuário salvo!");
+    });
+
+    // Função de Salvar/Atualizar Pet
+    document.getElementById('btn-create-pet').addEventListener('click', async () => {
+      const name = document.getElementById('pet-name').value;
+      const emoji = document.getElementById('pet-emoji').value;
+      const tip = document.getElementById('pet-tip').value;
+      if(!name || !emoji) return;
+
+      if (editingPetId) {
+        await update(ref(db, `pets/${editingPetId}`), { name, emoji, tip });
+        alert("Pet atualizado com sucesso!");
+      } else {
+        await push(ref(db, 'pets'), { name, emoji, tip, type: 'generic' });
+        alert("Pet criado!");
+      }
+      resetPetForm();
+    });
+
+    document.getElementById('btn-cancel-pet').addEventListener('click', () => { resetPetForm(); });
+
+    function resetPetForm() {
+      editingPetId = null;
+      document.getElementById('pet-name').value = '';
+      document.getElementById('pet-emoji').value = '';
+      document.getElementById('pet-tip').value = '';
+      document.getElementById('pet-action-title').innerText = "Criar";
+      document.getElementById('btn-create-pet').innerText = "Dar vida ao Pet";
+      document.getElementById('btn-cancel-pet').classList.add('hidden');
+    }
+
+    window.editPet = (id, name, emoji, tip) => {
+      editingPetId = id;
+      document.getElementById('pet-name').value = name;
+      document.getElementById('pet-emoji').value = emoji;
+      document.getElementById('pet-tip').value = tip;
+      document.getElementById('pet-action-title').innerText = "Editar";
+      document.getElementById('btn-create-pet').innerText = "Salvar Alterações";
+      document.getElementById('btn-cancel-pet').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-create-song').addEventListener('click', async () => {
+      const userId = document.getElementById('playlist-user-select').value;
+      const name = document.getElementById('song-name').value;
+      const cover = document.getElementById('song-cover').value;
+      const url = document.getElementById('song-url').value;
+      if(!userId || !name || !url) return;
+      await push(ref(db, `playlists/${userId}`), { name, cover, url });
+      alert("Música adicionada!");
+    });
+
+    document.getElementById('btn-create-reward').addEventListener('click', async () => {
+      const name = document.getElementById('reward-name').value;
+      const price = parseInt(document.getElementById('reward-price').value);
+      if(!name || !price) return;
+      await push(ref(db, 'store'), { name, price });
+      alert("Cadastrado na loja!");
+    });
+
+    document.getElementById('btn-create-task').addEventListener('click', async () => {
+      const assignedTo = document.getElementById('task-user-select').value;
+      const desc = document.getElementById('task-desc').value;
+      const coins = parseInt(document.getElementById('task-coins').value || 0);
+      const petId = document.getElementById('task-pet-select').value;
+      if(!desc) return;
+      await push(ref(db, `tasks/${assignedTo}`), { desc, coins, petId, status: 'pending', timeSpent: 0 });
+      alert("Tarefa enviada!");
+    });
+
+    window.deleteSong = async (userId, songId) => { await remove(ref(db, `playlists/${userId}/${songId}`)); };
+
+    // --- CARREGAMENTO ADMIN ---
+    function loadAdminData() {
+      onValue(ref(db, 'users'), (snapshot) => {
+        const selTask = document.getElementById('task-user-select');
+        const selPlay = document.getElementById('playlist-user-select');
+        selTask.innerHTML = ''; selPlay.innerHTML = '<option value="">Escolha um usuário...</option>';
+        snapshot.forEach(child => {
+          if(child.val().role === 'user') {
+            selTask.innerHTML += `<option value="${child.key}">${child.val().username}</option>`;
+            selPlay.innerHTML += `<option value="${child.key}">${child.val().username}</option>`;
+          }
+        });
+      });
+
+      onValue(ref(db, 'pets'), (snapshot) => {
+        const select = document.getElementById('task-pet-select'); 
+        const adminList = document.getElementById('admin-pets-list');
+        select.innerHTML = '<option value="">Sem Pet</option>';
+        adminList.innerHTML = '';
+
+        snapshot.forEach(child => { 
+          const pet = child.val();
+          const pId = child.key;
+          select.innerHTML += `<option value="${pId}">${pet.emoji} ${pet.name}</option>`; 
+          adminList.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:rgba(0,0,0,0.3); padding:8px; border-radius:5px;">
+              <span style="font-size:0.9em;">${pet.emoji} ${pet.name}</span>
+              <button class="btn-success" style="width:auto; padding:5px 10px; margin:0;" onclick="editPet('${pId}', '${pet.name}', '${pet.emoji}', '${pet.tip}')">Editar</button>
+            </div>
+          `;
+        });
+      });
+
+      document.getElementById('playlist-user-select').addEventListener('change', (e) => {
+        const uId = e.target.value; const list = document.getElementById('admin-songs-list');
+        if(!uId) { list.innerHTML = ''; return; }
+        onValue(ref(db, `playlists/${uId}`), (snapshot) => {
+          list.innerHTML = '';
+          snapshot.forEach(child => {
+            list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:rgba(0,0,0,0.3); padding:8px; border-radius:5px;"><span style="font-size:0.9em;">🎵 ${child.val().name}</span><button class="btn-danger" style="width:auto; padding:5px 10px; margin:0;" onclick="deleteSong('${uId}', '${child.key}')">Excluir</button></div>`;
+          });
+        });
+      });
+
+      onValue(ref(db), (snapshot) => {
+        const reviewList = document.getElementById('pending-reviews-list');
+        const purchaseList = document.getElementById('pending-purchases-list');
+        const historyList = document.getElementById('admin-history-list');
+        
+        reviewList.innerHTML = ''; purchaseList.innerHTML = ''; historyList.innerHTML = '';
+        
+        if(snapshot.hasChild('tasks')) {
+          snapshot.child('tasks').forEach(userNode => {
+            const userId = userNode.key;
+            userNode.forEach(taskNode => {
+              const task = taskNode.val();
+              if (task.status === 'review') {
+                reviewList.innerHTML += `
+                  <div class="card" style="background: rgba(0,0,0,0.4); padding:10px;">
+                    <strong>👤 ${userId}</strong> fez: ${task.desc} (🪙 ${task.coins || 0})<br>
+                    <small style="color: #bbb;">⏱️ Tempo: ${formatTime(task.timeSpent || 0)}</small>
+                    <div style="margin-top:10px;">
+                      <button class="btn-success" onclick="approveTask('${userId}', '${taskNode.key}')">Pagar Moedas</button>
+                      <button class="btn-danger" onclick="rejectTask('${userId}', '${taskNode.key}')">Recusar</button>
+                    </div>
+                  </div>`;
+              } else if (task.status === 'history') {
+                historyList.innerHTML += `
+                  <div class="card" style="border-left: 4px solid var(--success); padding: 10px;">
+                    ✅ <strong>${userId}</strong> concluiu a tarefa "${task.desc}" e ganhou 🪙 ${task.coins || 0}<br>
+                    <small style="color: #bbb;">⏱️ Executada em: ${formatTime(task.timeSpent || 0)}</small>
+                  </div>`;
+              }
+            });
+          });
+        }
+
+        if(snapshot.hasChild('purchases')) {
+          snapshot.child('purchases').forEach(userNode => {
+            const userId = userNode.key;
+            userNode.forEach(purchNode => {
+              const purch = purchNode.val();
+              if(purch.status === 'pending') {
+                purchaseList.innerHTML += `<div class="card" style="background: rgba(255,215,0,0.1); border: 1px solid gold;"><strong>👤 ${userId}</strong> resgatou: <strong>${purch.itemName}</strong><button class="btn-success" onclick="markPaid('${userId}', '${purchNode.key}')" style="margin-top:10px;">Entregar Prêmio</button></div>`;
+              } else if (purch.status === 'paid') {
+                historyList.innerHTML += `<div class="card" style="border-left: 4px solid gold; padding: 10px;">🎁 <strong>${userId}</strong> recebeu o prêmio "${purch.itemName}"</div>`;
+              }
+            });
+          });
+        }
+
+        if(snapshot.hasChild('transfers')) {
+          snapshot.child('transfers').forEach(tNode => {
+            const t = tNode.val();
+            historyList.innerHTML += `<div class="card" style="border-left: 4px solid var(--secondary); padding: 10px;">💸 <strong>${t.from}</strong> transferiu 🪙 ${t.amount} moedas para <strong>${t.to}</strong></div>`;
+          });
+        }
+      });
+    }
+
+    // --- CARREGAMENTO USUÁRIO ---
+    function loadUserData() {
+      onValue(ref(db, `users/${currentUser.id}/coins`), (snap) => {
+        const coins = snap.val() || 0; currentUser.coins = coins;
+        document.getElementById('user-coin-balance').innerText = coins;
+      });
+
+      onValue(ref(db, 'users'), (snapshot) => {
+        const selTransfer = document.getElementById('transfer-user-select');
+        selTransfer.innerHTML = '<option value="">Para quem vai a grana?</option>';
+        snapshot.forEach(child => {
+          if(child.val().role === 'user' && child.key !== currentUser.id) {
+            selTransfer.innerHTML += `<option value="${child.key}">${child.val().username}</option>`;
+          }
+        });
+      });
+
+      onValue(ref(db, `tasks/${currentUser.id}`), (snapshot) => {
+        const list = document.getElementById('user-tasks-list'); list.innerHTML = '';
+        snapshot.forEach(child => {
+          const task = child.val();
+          if(task.status === 'pending') list.innerHTML += `<div class="card"><h4>${task.desc} <span style="color:gold;">(🪙 ${task.coins || 0})</span></h4><button onclick="startTask('${child.key}')">Iniciar</button></div>`;
+          else if (task.status === 'review') list.innerHTML += `<div class="card" style="opacity:0.5;"><h4>${task.desc}</h4><p>⏳ Aguardando aprovação...</p></div>`;
+        });
+      });
+
+      onValue(ref(db, `store`), (snapshot) => {
+        const list = document.getElementById('store-items-list'); list.innerHTML = '';
+        snapshot.forEach(child => {
+          const item = child.val();
+          list.innerHTML += `<div class="card store-item"><h4>${item.name}</h4><div class="price">🪙 ${item.price}</div><button onclick="buyItem('${child.key}', '${item.name}', ${item.price})">Comprar</button></div>`;
+        });
+      });
+
+      onValue(ref(db, `playlists/${currentUser.id}`), (snapshot) => {
+        const grid = document.getElementById('user-playlist-grid'); grid.innerHTML = ''; userPlaylistStore = []; let index = 0;
+        snapshot.forEach(child => {
+          const song = child.val(); song.ytId = getYTId(song.url); userPlaylistStore.push(song);
+          grid.innerHTML += `<div class="song-card" onclick="playSong(${index})"><img src="${song.cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=300&q=80'}" alt="Capa"><div class="song-title">${song.name}</div></div>`;
+          index++;
+        });
+        if(userPlaylistStore.length === 0) grid.innerHTML = '<p>Você ainda não tem músicas. Peça ao Admin!</p>';
+      });
+    }
+
+    // --- TRANSFERÊNCIA DE MOEDAS ---
+    document.getElementById('btn-transfer-coins').addEventListener('click', async () => {
+      const recId = document.getElementById('transfer-user-select').value;
+      const amount = parseInt(document.getElementById('transfer-amount').value);
+      if(!recId) return alert("Escolha quem vai receber!");
+      if(isNaN(amount) || amount <= 0) return alert("Digite um valor válido maior que zero!");
+      if(currentUser.coins < amount) return alert("Saldo insuficiente, vá fazer suas tarefas!");
+
+      const recSnap = await get(child(ref(db), `users/${recId}`));
+      if(recSnap.exists()){
+        const recName = recSnap.val().username;
+        const recCoins = parseInt(recSnap.val().coins || 0);
+        
+        await update(ref(db, `users/${currentUser.id}`), { coins: currentUser.coins - amount });
+        await update(ref(db, `users/${recId}`), { coins: recCoins + amount });
+        
+        await push(ref(db, 'transfers'), { from: currentUser.username, to: recName, amount: amount });
+        
+        alert(`Sucesso! Você enviou 🪙 ${amount} para ${recName}.`);
+        document.getElementById('transfer-amount').value = '';
+      }
+    });
+
+    // --- DEMAIS AÇÕES GLOBAIS ---
+    window.playSong = (index) => {
+      const clickedSong = userPlaylistStore[index]; const iframe = document.getElementById('yt-iframe');
+      if (clickedSong.ytId) {
+        let remainingIds = []; for(let i = index + 1; i < userPlaylistStore.length; i++) { if(userPlaylistStore[i].ytId) remainingIds.push(userPlaylistStore[i].ytId); }
+        let embedUrl = `https://www.youtube.com/embed/${clickedSong.ytId}?autoplay=1`;
+        if (remainingIds.length > 0) embedUrl += `&playlist=${remainingIds.join(',')}`;
+        iframe.src = embedUrl;
+      } else iframe.src = clickedSong.url;
+      document.getElementById('yt-player-container').style.display = 'block';
+    };
+
+    window.approveTask = async (uId, tId) => {
+      const taskSnap = await get(child(ref(db), `tasks/${uId}/${tId}`));
+      const userSnap = await get(child(ref(db), `users/${uId}`));
+      await update(ref(db, `users/${uId}`), { coins: (parseInt(userSnap.val().coins || 0) + parseInt(taskSnap.val().coins || 0)) });
+      await update(ref(db, `tasks/${uId}/${tId}`), { status: 'history' });
+    };
+    window.rejectTask = async (uId, tId) => { await update(ref(db, `tasks/${uId}/${tId}`), { status: 'pending' }); };
+    window.markPaid = async (uId, pId) => { await update(ref(db, `purchases/${uId}/${pId}`), { status: 'paid' }); };
+    window.buyItem = async (iId, name, price) => {
+      if(currentUser.coins >= price) {
+        if(confirm(`Comprar "${name}" por ${price} moedas?`)) {
+          await update(ref(db, `users/${currentUser.id}`), { coins: currentUser.coins - price });
+          await push(ref(db, `purchases/${currentUser.id}`), { itemName: name, price: price, status: 'pending' });
+          alert("Aprovado! O Admin já foi notificado.");
+        }
+      } else { alert("Faltam moedas! Cumpra mais tarefas."); }
+    };
+
+    // --- TELA DE EXECUÇÃO ---
+    window.startTask = async (taskId) => {
+      const snapshot = await get(child(ref(db), `tasks/${currentUser.id}/${taskId}`));
+      const task = snapshot.val(); currentTaskExecId = taskId;
+      document.getElementById('user-screen').classList.add('hidden'); document.getElementById('execution-screen').classList.remove('hidden');
+      document.getElementById('exec-task-title').innerText = task.desc; document.getElementById('exec-task-coins').innerText = task.coins || 0;
+      const petDiv = document.getElementById('exec-pet-emoji'); const dialogDiv = document.getElementById('exec-pet-dialogue');
+      petDiv.className = 'pet-container hidden'; 
+      if(task.petId) {
+        const petSnap = await get(child(ref(db), `pets/${task.petId}`));
+        if(petSnap.exists()) {
+          const pet = petSnap.val(); petDiv.innerText = pet.emoji; petDiv.classList.add('anim-generic'); petDiv.classList.remove('hidden');
+          dialogDiv.innerText = `"${pet.tip}" - ${pet.name}`; dialogDiv.classList.remove('hidden');
+        }
+      } else { petDiv.classList.add('hidden'); dialogDiv.classList.add('hidden'); }
+      startTimer();
+    };
+
+    function startTimer() {
+      secondsElapsed = 0; document.getElementById('timer-text').innerText = "00:00"; clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        secondsElapsed++; document.getElementById('timer-text').innerText = formatTime(secondsElapsed);
+        const percent = (secondsElapsed % 60) / 60 * 100; 
+        document.getElementById('circle-timer').style.background = `conic-gradient(var(--primary) ${percent}%, rgba(255,255,255,0.1) ${percent}%)`;
+      }, 1000);
+    }
+    
+    document.getElementById('btn-finish-task').addEventListener('click', async () => {
+      clearInterval(timerInterval); await update(ref(db, `tasks/${currentUser.id}/${currentTaskExecId}`), { status: 'review', timeSpent: secondsElapsed });
+      alert("Enviado para auditoria!"); document.getElementById('execution-screen').classList.add('hidden'); document.getElementById('user-screen').classList.remove('hidden');
+    });
+    
+    document.getElementById('btn-cancel-task').addEventListener('click', () => {
+      clearInterval(timerInterval); document.getElementById('execution-screen').classList.add('hidden'); document.getElementById('user-screen').classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
