@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trick House - Painel Inteligente Gamificado</title>
+  <title>Trick House - Painel</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f0c29">
+  <link rel="apple-touch-icon" href="icone192.png">
+
   <style>
     /* Estilos Globais - Tema Glassmorphism Moderno */
     :root {
@@ -649,6 +654,45 @@
     
     document.getElementById('btn-cancel-task').addEventListener('click', () => {
       clearInterval(timerInterval); document.getElementById('execution-screen').classList.add('hidden'); document.getElementById('user-screen').classList.remove('hidden');
+    });
+
+    // =========================================================
+    // --- PWA: REGISTRO DO SERVICE WORKER E WAKE LOCK ---
+    // =========================================================
+
+    // Registra o Service Worker (necessário para virar um App Instalável)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker Registrado!', reg))
+          .catch((err) => console.log('Erro no Service Worker', err));
+      });
+    }
+
+    // Trava de tela (Wake Lock) para o celular não apagar
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Wake Lock Ativado: A tela não vai apagar sozinha!');
+          wakeLock.addEventListener('release', () => {
+            console.log('Wake Lock liberado.');
+          });
+        }
+      } catch (err) {
+        console.error(`Erro no Wake Lock: ${err.name}, ${err.message}`);
+      }
+    };
+
+    // Pede o Wake Lock assim que a página carregar
+    requestWakeLock();
+
+    // Reativa o Wake Lock se o usuário minimizar o app e voltar
+    document.addEventListener('visibilitychange', async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
     });
   </script>
 </body>
